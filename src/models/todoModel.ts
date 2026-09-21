@@ -1,24 +1,7 @@
 import pool from '../config/db';
 
 export const TodoModel = {
-  // Method yang sudah ada sebelumnya (misal: getByUserId, create)
-  getByUserId: async (userId: number) => {
-    const [rows]: any = await pool.query(
-      'SELECT * FROM todos WHERE user_id = ?',
-      [userId]
-    );
-    return rows;
-  },
-
-  create: async (task: string, userId: number) => {
-    const [result]: any = await pool.query(
-      'INSERT INTO todos (task, user_id) VALUES (?, ?)',
-      [task, userId]
-    );
-    return result.insertId;
-  },
-
-  // Method baru sesuai petunjuk modul
+  // Fungsi yang sudah ada sebelumnya
   getById: async (id: number, userId: number) => {
     const [rows]: any = await pool.query(
       'SELECT * FROM todos WHERE id = ? AND user_id = ?',
@@ -27,11 +10,34 @@ export const TodoModel = {
     return rows[0];
   },
 
-  update: async (id: number, task: string, isCompleted: boolean, userId: number) => {
+  create: async (userId: number, task: string) => {
     const [result]: any = await pool.query(
-      'UPDATE todos SET task = ?, is_completed = ? WHERE id = ? AND user_id = ?',
-      [task, isCompleted, id, userId]
+      'INSERT INTO todos (user_id, task) VALUES (?, ?)',
+      [userId, task]
     );
+    return result.insertId;
+  },
+
+  update: async (id: number, task?: string, isCompleted?: boolean, userId?: number) => {
+    const fields: string[] = [];
+    const values: any[] = [];
+
+    if (task !== undefined) {
+      fields.push('task = ?');
+      values.push(task);
+    }
+
+    if (isCompleted !== undefined) {
+      fields.push('is_completed = ?');
+      values.push(isCompleted);
+    }
+
+    if (fields.length === 0) return 0;
+
+    const query = `UPDATE todos SET ${fields.join(', ')} WHERE id = ? AND user_id = ?`;
+    values.push(id, userId);
+
+    const [result]: any = await pool.query(query, values);
     return result.affectedRows;
   },
 
@@ -41,5 +47,22 @@ export const TodoModel = {
       [id, userId]
     );
     return result.affectedRows;
-  }
+  },
+
+  // Fungsi baru untuk Pagination (Tugas #6)
+  getByUserId: async (userId: number, limit: number, offset: number) => {
+    const [rows] = await pool.query(
+      'SELECT * FROM todos WHERE user_id = ? ORDER BY id DESC LIMIT ? OFFSET ?',
+      [userId, limit, offset]
+    );
+    return rows;
+  },
+
+  countByUserId: async (userId: number) => {
+    const [rows]: any = await pool.query(
+      'SELECT COUNT(*) AS total FROM todos WHERE user_id = ?',
+      [userId]
+    );
+    return rows[0].total as number;
+  },
 };

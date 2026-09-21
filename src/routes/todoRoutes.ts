@@ -1,8 +1,17 @@
 import { Router } from 'express';
-import { getTodos, getTodoById, createTodo, updateTodo, deleteTodo } from '../controllers/todoController';
+import {
+  getTodos,
+  getTodoById,
+  createTodo,
+  updateTodo,
+  deleteTodo,
+} from '../controllers/todoController';
+import { verifyToken } from '../middlewares/authMiddleware';
 import { validateTodo, validateUpdateTodo } from '../middlewares/validator';
 
 const router = Router();
+
+router.use(verifyToken);
 
 router.get('/', getTodos);
 router.get('/:id', getTodoById);
